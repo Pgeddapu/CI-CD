@@ -1,0 +1,444 @@
+CI/CD Pipeline Failures – Real-Time Scenarios & Troubleshooting
+CI/CD Pipeline Failures – Real-Time Scenarios & Troubleshooting
+Q) What kind of errors have you seen in your CI/CD pipeline and how did you resolve them?
+Answer:
+In real-time DevOps projects, I have handled multiple types of failures across CI/CD pipelines, Docker, Kubernetes, Terraform, cloud infrastructure, and security tools.
+
+Whenever a pipeline fails, my approach is:
+
+Identify the exact stage where failure occurred
+Analyze logs carefully
+Find the root cause
+Fix the issue with minimal downtime
+Implement preventive automation to avoid recurrence
+Below are some real-time scenarios I handled in production environments.
+
+
+1) Build Failure Due to Dependency Issues
+Real-Time Scenario
+In one project, the Jenkins pipeline started failing during the Maven build stage after developers merged new code into the main branch.
+
+Error
+Could not resolve dependencies
+
+Version conflict detected
+
+Package not found
+
+
+Root Cause
+One library version was upgraded
+Another internal package still depended on the old version
+Corrupted Maven cache
+Troubleshooting
+Checked Jenkins console logs
+Verified recent pom.xml changes
+Checked Nexus repository artifacts
+Cleared Maven cache:
+rm -rf ~/.m2/repository
+
+
+Resolution
+Fixed dependency version mismatch
+Updated parent pom.xml
+Rebuilt the pipeline successfully
+Prevention
+Implemented dependency version standards
+Added dependency validation in CI pipeline
+
+2) Docker Image Build Failure
+Real-Time Scenario
+Docker image build failed during Azure DevOps pipeline execution.
+
+Error
+No space left on device
+
+Docker build failed
+
+Package install failure
+
+
+Root Cause
+Jenkins agent disk became full
+Old Docker images consumed storage
+Proxy/network issue while downloading packages
+Troubleshooting
+Logged into Jenkins agent server
+Checked disk usage:
+df -h
+
+docker system df
+
+
+Removed unused Docker images:
+docker system prune -a
+
+
+Validated Dockerfile changes
+Verified internet/proxy connectivity
+Resolution
+Cleaned unused Docker images
+Optimized Docker layers
+Added automated cleanup jobs
+Additional Real-Time Issues
+Wrong base image tag
+DockerHub rate limits
+Missing package repositories
+Best Practice
+Used Docker layer caching to reduce build time significantly.
+
+
+3) SonarQube Quality Gate Failure
+Real-Time Scenario
+Pipeline failed before deployment because SonarQube quality gate failed.
+
+Error
+Quality Gate Failed
+
+Critical vulnerabilities detected
+
+Coverage below threshold
+
+
+What Actually Happens
+Pipeline waits for SonarQube analysis results.
+If:
+
+Code coverage is low
+Critical vulnerabilities exist
+Code smells exceed threshold
+then deployment gets blocked automatically.
+
+Troubleshooting
+Opened SonarQube dashboard
+Reviewed:
+Vulnerabilities
+Code smells
+Duplications
+Coverage reports
+Worked with developers to fix issues
+Resolution
+Added unit tests
+Removed hardcoded secrets
+Reduced duplicate code
+Best Practice
+Block pipeline only for Critical/Blocker issues
+Allow minor warnings
+
+4) Terraform Pipeline Failure
+Real-Time Scenario
+Terraform deployment failed while provisioning AWS infrastructure.
+
+Error
+Error acquiring state lock
+
+Resource already exists
+
+
+Root Cause
+Another Terraform execution already running
+Infrastructure drift
+State file inconsistency
+Troubleshooting
+Checked Terraform backend
+Verified DynamoDB state lock
+Executed:
+terraform refresh
+
+terraform plan
+
+
+Resolution
+Removed stale state lock
+Imported manually created resources
+Reconfigured remote backend
+Best Practice
+Used:
+
+S3 backend
+DynamoDB locking
+Separate workspaces for environments
+
+5) Expired Credentials / Tokens
+Real-Time Scenario
+Pipeline failed while pushing Docker images to AWS ECR.
+
+Error
+Token expired
+
+Authentication failed
+
+AccessDeniedException
+
+
+Root Cause
+AWS temporary credentials expired
+Azure service principal secret expired
+Kubernetes token rotation issue
+Troubleshooting
+Verified IAM credentials
+Checked Jenkins credentials store
+Validated cloud permissions
+Resolution
+Rotated credentials
+Reconfigured secrets
+Integrated HashiCorp Vault
+Best Practice
+Avoid hardcoded credentials. Use:
+
+Vault
+IAM Roles
+Kubernetes Secrets
+Managed Identity
+
+6) Kubernetes Deployment Failure
+Real-Time Scenario
+Deployment failed after successful image build.
+
+Common Errors
+CrashLoopBackOff
+ImagePullBackOff
+OOMKilled
+Readiness probe failed
+
+Scenario 1 — ImagePullBackOff
+Root Cause
+Wrong image tag
+Image not pushed properly
+Registry authentication issue
+Troubleshooting
+kubectl describe pod pod-name
+
+
+Resolution
+Fixed image tag
+Reconfigured imagePullSecrets
+
+Scenario 2 — CrashLoopBackOff
+Root Cause
+Application startup failure
+Missing environment variables
+Database connectivity issue
+Troubleshooting
+kubectl logs pod-name
+
+
+Resolution
+Fixed environment variables
+Updated ConfigMaps
+Added retry handling
+
+Scenario 3 — OOMKilled
+Root Cause
+Container exceeded memory limits.
+
+Resolution
+Configured proper memory limits:
+
+resources:
+
+  requests:
+
+    memory: "512Mi"
+
+  limits:
+
+    memory: "1Gi"
+
+
+Best Practice
+Always configure:
+
+Liveness probes
+Readiness probes
+Resource limits
+
+7) Jenkins / Azure DevOps Agent Connectivity Issues
+Real-Time Scenario
+Pipelines were stuck in queue for a long time.
+
+Error
+Agent disconnected
+
+No available agents
+
+
+Root Cause
+Agent VM down
+Java process crashed
+Disk full
+Network issue
+Troubleshooting
+Logged into agent server
+Checked service status:
+systemctl status jenkins-agent
+
+
+Verified CPU, memory, and connectivity
+Resolution
+Restarted agent service
+Increased auto-scaling agents
+Added monitoring alerts
+Best Practice
+Use:
+
+Kubernetes dynamic agents
+Auto-scaling runners
+Spot instances
+
+8) Security Scan Blocking Pipeline
+Real-Time Scenario
+Trivy security scan blocked deployment.
+
+Error
+Critical vulnerabilities found
+
+Pipeline blocked
+
+
+What Actually Happens
+Pipeline scans:
+
+Docker images
+OS packages
+Application dependencies
+before deployment.
+
+Troubleshooting
+Reviewed vulnerability report
+Identified vulnerable package
+Updated base image
+Resolution
+Upgraded vulnerable libraries
+Rebuilt Docker image
+Patched base images regularly
+Best Practice
+Use:
+
+Trivy
+Snyk
+Grype
+Dependabot
+
+9) Kubernetes Node Not Ready
+Real-Time Scenario
+Applications became unavailable suddenly.
+
+Error
+NodeNotReady
+
+
+Root Cause
+Disk pressure
+Memory pressure
+kubelet failure
+Unhealthy EC2 instance
+Troubleshooting
+kubectl describe node
+
+
+Resolution
+Restarted kubelet
+Cleaned disk
+Replaced unhealthy node
+Best Practice
+Use:
+
+Cluster autoscaler
+Node monitoring
+Prometheus alerts
+
+10) CI/CD Pipeline Performance Issues
+Real-Time Scenario
+Pipeline execution time increased from 10 minutes to 45 minutes.
+
+Root Cause
+Large Docker images
+No caching
+Sequential execution
+Resolution
+Implemented:
+
+Docker layer caching
+Parallel stages
+Incremental builds
+Shared workspace caching
+Result
+Reduced pipeline execution time from 45 minutes to 12 minutes.
+
+
+11) Blue-Green Deployment Failure
+Real-Time Scenario
+Traffic switched to the new version and users started getting 500 errors.
+
+Root Cause
+Health checks not validated properly
+Database migration incompatibility
+Troubleshooting
+Checked ingress logs
+Verified application logs
+Rolled back immediately
+Resolution
+Implemented smoke testing
+Added automated rollback
+Introduced canary deployments
+
+12) Database Migration Failure
+Real-Time Scenario
+Application deployment succeeded but application crashed after startup.
+
+Root Cause
+New application expected updated schema but migration failed.
+
+Resolution
+Added migration validation step
+Implemented backward-compatible schema changes
+Best Practice
+Never tightly couple deployments with database schema changes.
+
+
+13) Helm Chart Deployment Issues
+Error
+helm upgrade failed
+
+
+Root Cause
+Incorrect values.yaml
+Missing secrets
+YAML indentation issues
+Troubleshooting
+helm lint
+
+helm template
+
+
+Resolution
+Validated Helm templates before deployment
+Fixed values configuration
+
+14) Production Outage Due to Wrong Configuration
+Real-Time Scenario
+Wrong ConfigMap values were deployed to production.
+
+Impact
+Production application downtime.
+
+Resolution
+Rolled back deployment immediately
+Added approval gates
+Added GitOps validation
+
+15) SSL Certificate Expired
+Real-Time Scenario
+Production application became inaccessible over HTTPS.
+
+Root Cause
+Certificate renewal failed.
+
+Resolution
+Renewed certificate
+Added monitoring alerts before expiry
+
+Strong Interview Closing Line
+“In real-time DevOps projects, pipeline failures are usually not just tool issues. Most failures happen because of dependency conflicts, infrastructure drift, configuration mistakes, security controls, deployment strategy problems, or environment inconsistencies. My approach is always to first identify the exact stage of failure, analyze logs carefully, isolate the root cause, resolve the issue with minimal downtime, and finally implement preventive automation so the same issue does not happen again.”
+
